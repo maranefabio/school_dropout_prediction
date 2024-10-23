@@ -1,4 +1,5 @@
 {
+    "target_column": "dropout",
     "drop_columns": ["id", "name"],
     "fill_method": "mean",
     "categorical_columns": ["gender", "race", "region"],

@@ -1,40 +1,21 @@
 import polars as pl
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizer import Adam
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.optimizers import Adam
 
 
 class Model:
-    def __init__(
-        self,
-        X_train: pl.DataFrame,
-        X_test: pl.DataFrame,
-        y_train: pl.Series,
-        y_test: pl.Series
-    ) -> None:
-        self.__X_train = X_train
-        self.__X_test = X_test
-        self.__y_train = y_train
-        self.__y_test = y_test
-        self.__model: tf.keras.models
+    def __init__(self) -> None:
+        pass
 
-    def set(self) -> None:
-        model: tf.keras.models = Sequential()
-
-        model.add(Dense(
-            units=64,
-            activation='relu',
-            input_shape=self.get_X.shape[1]
-        ))
-        model.add(Dense(
-            units=32,
-            activation='relu'
-        ))
-        model.add(Dense(
-            units=1,
-            activation='sigmoid'
-        ))
+    def set(self, input_shape: tuple) -> None:
+        model: tf.keras.models = Sequential([
+            Dense(units=64, activation='relu'),
+            Dense(units=32, activation='relu'),
+            Dense(units=1, activation='sigmoid'),
+        ])
 
         self.__model = model
 
@@ -45,18 +26,18 @@ class Model:
             metrics=['accuracy']
         )
 
-    def train(self) -> None:
-        self.__model.fit(
-            self.__X_train,
-            self.__y_test,
+    def train(self, X_train: np.array, y_train: np.array) -> None:
+        return self.__model.fit(
+            X_train,
+            y_train,
             epochs=100,
             batch_size=32,
             validation_split=0.2,
             verbose=1
         )
 
-    def evaluate(self):
+    def evaluate(self, X_test: np.array, y_test: np.array) -> list:
         return self.__model.evaluate(
-            self.__X_test,
-            self.__y_test
+            X_test,
+            y_test
         )
