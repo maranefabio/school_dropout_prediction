@@ -1,7 +1,0 @@
-{
-    "target_column": "dropout",
-    "drop_columns": ["id", "name"],
-    "fill_method": "mean",
-    "categorical_columns": ["gender", "race", "region"],
-    "numerical_columns": ["age", "net_income", "average_grades", "num_bathrooms", "distance_from_school"]
-}
