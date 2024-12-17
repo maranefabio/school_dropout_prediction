@@ -5,25 +5,26 @@ from src.config import Config
 # from src.model.model import Model
 
 
-def preprocess() -> list[pl.DataFrame | pl.Series]:
+def init_dataset() -> pl.DataFrame:
     dataset: DataSet = DataSet(
-        path='src/data/files/students_sao_paulo.csv'
+        path='src/data/files/students_sao_paulo.csv',
     )
-    dataset.load()
+    df: pl.DataFrame = dataset.get()
 
-    preprocess: PreProcess = PreProcess(
-        raw_df=dataset.get(),
-        config=Config
-    )
-    preprocess.clean_and_transform()
-    preprocess.encode()
-    preprocess.scale()
+    return df.preprocess.apply()
 
-    return preprocess.get_data()
+def init_model() -> Model:
+    # model: Model = Model()
+
+    # X_train, X_test, y_train, y_test = processed_dataset
+    # model.set(input_shape=X_train.shape)
+    # model.compile()
+    # hist = model.train(X_train=X_train, y_train=y_train)
+
 
 
 def main():
-    print(preprocess())
+
     # model: Model = Model()
 
     # X_train, X_test, y_train, y_test = processed_dataset

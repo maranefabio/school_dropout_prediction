@@ -5,56 +5,61 @@ from src.utils.polars_extension.new_column import NewColumn
 from src.config import Config
 
 
+@pl.api.register_dataframe_namespace('preprocess')
 class PreProcess:
-    def __init__(self, raw_df: pl.DataFrame, config: Config) -> None:
-        self.__df: pl.DataFrame = raw_df
-        self.__config: Config = config
-        self.__data: list[pl.DataFrame | pl.Series] = None
+    def __init__(self, df: pl.DataFrame) -> None:
+        self.__df: pl.DataFrame = df
 
-    def get_df(self) -> pl.DataFrame:
-        return self.__df
-
-    def get_data(self) -> pl.DataFrame:
-        return self.__data
-
-    @pl.StringCache()
-    def clean_and_transform(self) -> None:
+    def apply(self) -> pl.DataFrame:
         df: pl.DataFrame = self.__df
 
-        if len(self.__config.DROP.value) > 0:
-            df = df.drop(self.__config.DROP.value)
+        df = self.clean_and_transform(df)
+        df = self.encode(df)
+        df = self.scale(df, how='min_max_normalization')
 
-        if 'birthdate' in self.__df.columns:
+        return df
+
+    def clean_and_transform(self, df: pl.DataFrame) -> pl.DataFrame:
+        if len(Config.DROP.value) > 0:
+            df = df.drop(Config.DROP.value)
+
+        if 'birthdate' in df.columns:
             df = df.new_column.age()
 
-        self.__df = df
+        return df
 
-    def encode(self) -> None:
-        df: pl.DataFrame = self.__df
-
-        for col in self.__config.CATHEGORICAL.value:
+    @pl.StringCache()
+    def encode(self, df: pl.DataFrame) -> pl.DataFrame:
+        for col in Config.CATHEGORICAL.value:
             df = df.with_columns(
                 pl.col(col).cast(pl.Categorical).to_physical()
             )
-        self.__df = df
 
-    def split(self) -> None:
-        x = self.__df.drop(self.__config.TARGET.value)
-        y = self.__df[self.__config.TARGET.value]
+        return df
 
-        data: list = train_test_split(
-            x.to_numpy(),
-            y.to_numpy(),
-            test_size=self.__config.TEST_PERCENT.value / 100,
-            random_state=self.__config.SEED.value
-        )
+    def scale(self,
+              df: pl.DataFrame,
+              how: str = 'min_max_normalization') -> pl.DataFrame:
+        def min_max_normalization(df: pl.DataFrame) -> pl.DataFrame:
+            for col in Config.NUMERICAL.value:
+                df = df.with_columns(
+                    (pl.col(col) - pl.col(col).min()) /
+                    (pl.col(col).max() - pl.col(col).min())
+                )
+            return df
 
-        self.__data = data
+        def standardization(df: pl.DataFrame) -> pl.DataFrame:
+            for col in Config.NUMERICAL.value:
+                df = df.with_columns(
+                    (pl.col(col) - pl.col(col).mean()) /
+                    (pl.col(col).std())
+                )
+            return df
 
-    def scale(self) -> None:
-        scaler: StandardScaler = StandardScaler()
-        data: list[pl.Series | pl.DataFrame] = self.__data
-        for i in range(2):
-            data[i] = scaler.fit_transform(data[i])
-
-        self.__data = data
+        match how:
+            case 'min_max_normalization':
+                return min_max_normalization(df)
+            case 'standardization':
+                return standardization(df)
+            case _:
+                return

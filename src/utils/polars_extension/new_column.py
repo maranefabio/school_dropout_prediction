@@ -8,8 +8,12 @@ class NewColumn:
         self.__df = df
 
     def age(self) -> list[pl.DataFrame]:
-        return self.__df.with_columns(
+        df: pl.DataFrame = self.__df
+
+        df = df.with_columns(
             age=((
                 dt.date.today() - pl.col('birthdate').cast(pl.Date)
             ).dt.total_days() / 365.25).cast(pl.Int32)
         ).drop('birthdate')
+
+        return df
